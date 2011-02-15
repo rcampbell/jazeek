@@ -1,12 +1,11 @@
 # jazeek
 
-Georgy got the access
-
 FIXME: write description
 
 ## Usage
 
-FIXME: write
+    lein deps
+    lein ring server
 
 ## License
 

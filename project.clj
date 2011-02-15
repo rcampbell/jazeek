@@ -4,4 +4,5 @@
                  [org.clojure/clojure-contrib "1.2.0"]
                  [compojure "0.6.0"]]
   :dev-dependencies [[swank-clojure "1.2.1"]
-                     [lein-ring "0.3.2"]])
+                     [lein-ring "0.3.2"]]
+  :ring {:handler jazeek.core/app})
