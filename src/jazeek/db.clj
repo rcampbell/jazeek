@@ -11,7 +11,7 @@
 
 (cql/open-global db)
 
-(defn init []
+(defn init! []
   (sql/with-connection db
     (sql/create-table :blocks [:text :text])))
 
