@@ -38,5 +38,10 @@
       (cql/conj! blocks {:id id :text text})
       id)))
 
+;;TODO: make this defn- ? Test will not be able to use it than... 
  
+(defn clob-to-string [clob]
+  "Turn a JdbcClob into a String"
+  (with-open [rdr (java.io.BufferedReader. (.getCharacterStream clob))]
+    (apply str (line-seq rdr))))
 
