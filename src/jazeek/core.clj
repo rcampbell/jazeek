@@ -49,8 +49,5 @@
 (def app
   (handler/site main-routes))
 
-(def run-app []
-  )
-
 (defonce jetty (future (run-jetty (var app) {:port 3000})))
 
