@@ -1,5 +1,6 @@
 (ns jazeek.core
   (:use compojure.core
+        net.cgrand.enlive-html
         ring.adapter.jetty)
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -12,30 +13,34 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
+(defn- clob->str [block]
+  (let [clob (:text block)]
+    (.getSubString clob 1 (.length clob)))) ; TODO: replace w/reader
+
 (defn create-block! [text]
   (let [id (db/create-block! text)]
     (moved-to (str "/blocks/" id))))
 
-
+(deftemplate editor "index.html" [id text]
+  [:form]     (do-> (set-attr :action (str "/blocks/" id))
+                    (prepend {:tag :input :attrs {:type "hidden"
+                                                  :name "_method"
+                                                  :value "PUT"}}))
+  [:textarea] (content text))
 
 (defn get-block [id]
-  (let [clob (:text (first @(db/get-block id)))
-        text (.getSubString clob 1 (.length clob))] ; TODO: replace w/reader
-    text)) 
+  (editor id (clob->str (first @(db/get-block id)))))
 
-(defn update-block! [params]
-  (println ">>> " params)
-  ;[{id :id, :as block}]
-;  (db/update-block! block)
- ; (get-block id)
-  )
+(defn update-block! [{id :id, :as block}]
+  (db/update-block! block)
+  (get-block id))
 
 (defn delete-block! [id]
   (db/delete-block! id)
   (moved-to "/"))
 
 (defn list-blocks []
-  "TODO")
+  (apply str (map clob->str @(db/list-blocks))))
 
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
@@ -49,5 +54,5 @@
 (def app
   (handler/site main-routes))
 
-(defonce jetty (future (run-jetty (var app) {:port 3000})))
+(defonce *server* (future (run-jetty (var app) {:port 3000})))
 

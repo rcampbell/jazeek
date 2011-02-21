@@ -41,4 +41,6 @@
   (defn update-block! [{:keys [id text]}]
     (cql/update-in! blocks (cql/where (= :id id)) {:text text}))
   (defn delete-block! [id]
-    (cql/disj! blocks (cql/where (= :id id)))))
+    (cql/disj! blocks (cql/where (= :id id))))
+  (defn list-blocks []
+    (cql/project (cql/select blocks true) [:text])))
