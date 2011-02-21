@@ -1,5 +1,6 @@
 (ns jazeek.core
-  (:use compojure.core)
+  (:use compojure.core
+        ring.adapter.jetty)
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
@@ -47,3 +48,9 @@
 
 (def app
   (handler/site main-routes))
+
+(def run-app []
+  )
+
+(defonce jetty (future (run-jetty (var app) {:port 3000})))
+
