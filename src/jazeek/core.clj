@@ -1,7 +1,8 @@
 (ns jazeek.core
   (:use compojure.core
         net.cgrand.enlive-html
-        ring.adapter.jetty)
+        [clojure.string :only (join)]
+        [ring.adapter.jetty :only (run-jetty)] )
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
@@ -13,15 +14,11 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
-(defn- clob->str [block]
-  (let [clob (:text block)]
-    (.getSubString clob 1 (.length clob)))) ; TODO: replace w/reader
-
 (defn create-block! [text]
   (let [id (db/create-block! text)]
     (moved-to (str "/blocks/" id))))
 
-(deftemplate editor "index.html" [id text]
+(deftemplate edit-view "index.html" [id text]
   [:form]     (do-> (set-attr :action (str "/blocks/" id))
                     (prepend {:tag :input :attrs {:type "hidden"
                                                   :name "_method"
@@ -29,7 +26,7 @@
   [:textarea] (content text))
 
 (defn get-block [id]
-  (editor id (clob->str (first @(db/get-block id)))))
+  (->> @(db/get-block id) first :text db/clob->str (edit-view id)))
 
 (defn update-block! [{id :id, :as block}]
   (db/update-block! block)
@@ -39,12 +36,15 @@
   (db/delete-block! id)
   (moved-to "/"))
 
-(defn list-blocks []
-  (apply str (map clob->str @(db/list-blocks))))
+(deftemplate list-view "list.html" [blocks]
+  {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
+                           [:a]  (do-> (set-attr :href (str "/blocks/" id))
+                                       (content id))
+                           [:dd] (content (db/clob->str text))))
 
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
-  (GET    "/blocks/"    []                 (list-blocks))
+  (GET    "/blocks/"    []                 (list-view @(db/list-blocks)))
   (POST   "/blocks/"    [& {:keys [text]}] (create-block! text))
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))

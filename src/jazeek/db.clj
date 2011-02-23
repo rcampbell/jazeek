@@ -43,4 +43,7 @@
   (defn delete-block! [id]
     (cql/disj! blocks (cql/where (= :id id))))
   (defn list-blocks []
-    (cql/project (cql/select blocks true) [:text])))
+    (cql/select blocks true)))
+
+(defn clob->str [clob]
+  (.getSubString clob 1 (.length clob)))
