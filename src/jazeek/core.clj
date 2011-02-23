@@ -1,7 +1,7 @@
 (ns jazeek.core
-  (:use compojure.core
-        net.cgrand.enlive-html
-        [clojure.string :only (join)]
+  (:use [clojure.string :only (join)]
+        [net.cgrand.enlive-html :only (deftemplate do-> set-attr prepend content clone-for)]
+        [compojure.core :only (GET POST PUT DELETE defroutes)]
         [ring.adapter.jetty :only (run-jetty)] )
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -14,16 +14,22 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
-(defn create-block! [text]
-  (let [id (db/create-block! text)]
-    (moved-to (str "/blocks/" id))))
-
 (deftemplate edit-view "index.html" [id text]
   [:form]     (do-> (set-attr :action (str "/blocks/" id))
                     (prepend {:tag :input :attrs {:type "hidden"
                                                   :name "_method"
                                                   :value "PUT"}}))
   [:textarea] (content text))
+
+(deftemplate list-view "list.html" [blocks]
+  {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
+                           [:a]  (do-> (set-attr :href (str "/blocks/" id))
+                                       (content id))
+                           [:dd] (content (db/clob->str text))))
+
+(defn create-block! [text]
+  (let [id (db/create-block! text)]
+    (moved-to (str "/blocks/" id))))
 
 (defn get-block [id]
   (->> @(db/get-block id) first :text db/clob->str (edit-view id)))
@@ -36,19 +42,13 @@
   (db/delete-block! id)
   (moved-to "/"))
 
-(deftemplate list-view "list.html" [blocks]
-  {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
-                           [:a]  (do-> (set-attr :href (str "/blocks/" id))
-                                       (content id))
-                           [:dd] (content (db/clob->str text))))
-
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
   (GET    "/blocks/"    []                 (list-view @(db/list-blocks)))
   (POST   "/blocks/"    [& {:keys [text]}] (create-block! text))
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))
-  (DELETE "/blocks/:id" [id]               (db/delete-block! id))
+  (DELETE "/blocks/:id" [id]               (delete-block! id))
   (route/not-found "Page not found"))
 
 (def app
