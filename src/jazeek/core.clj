@@ -1,5 +1,8 @@
 (ns jazeek.core
-  (:use compojure.core)
+  (:use [clojure.string :only (join)]
+        [net.cgrand.enlive-html :only (deftemplate do-> set-attr prepend content clone-for)]
+        [compojure.core :only (GET POST PUT DELETE defroutes)]
+        [ring.adapter.jetty :only (run-jetty)] )
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
@@ -17,26 +20,29 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
+(deftemplate edit-view "index.html" [id text]
+  [:form]     (do-> (set-attr :action (str "/blocks/" id))
+                    (prepend {:tag :input :attrs {:type "hidden"
+                                                  :name "_method"
+                                                  :value "PUT"}}))
+  [:textarea] (content text))
+
+(deftemplate list-view "list.html" [blocks]
+  {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
+                           [:a]  (do-> (set-attr :href (str "/blocks/" id))
+                                       (content id))
+                           [:dd] (content (db/clob->str text))))
+
 (defn create-block! [text]
   (let [id (db/create-block! text)]
     (moved-to (str "/blocks/" id))))
 
-(defn- clob-to-string [clob]
-  "Turn a JdbcClob into a String"
-  (with-open [rdr (java.io.BufferedReader. (.getCharacterStream clob))]
-    (apply str (line-seq rdr))))
-
 (defn get-block [id]
-  (let [clob (:text (first @(db/get-block id)))
-        text (clob-to-string clob)]
-    text))
+  (->> @(db/get-block id) first :text db/clob->str (edit-view id)))
 
-(defn update-block! [params]
-  (println ">>> " params)
-  ;[{id :id, :as block}]
-;  (db/update-block! block)
- ; (get-block id)
-  )
+(defn update-block! [{id :id, :as block}]
+  (db/update-block! block)
+  (get-block id))
 
 (defn delete-block! [id]
   (db/delete-block! id)
@@ -51,11 +57,11 @@
 
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
-  (GET    "/blocks/"    []                 (list-blocks))
+  (GET    "/blocks/"    []                 (list-view @(db/list-blocks)))
   (POST   "/blocks/"    [& {:keys [text]}] (create-block! text))
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))
-  (DELETE "/blocks/:id" [id]               (db/delete-block! id))
+  (DELETE "/blocks/:id" [id]               (delete-block! id))
   (GET    "/login"      []                 (response/resource "login.html"))
   (POST   "/auth_callback" [& params]      (loginza/auth-callback params))
   (GET    "/logout"     []                 (loginza/logout "/"))
@@ -65,3 +71,5 @@
   (-> (handler/site main-routes)
       (auth/with-security security-policy loginza/loginza-authenticator)
       session/wrap-stateful-session))
+  
+(defonce *server* (future (run-jetty (var app) {:port 3000})))
