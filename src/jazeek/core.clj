@@ -43,7 +43,7 @@
   (moved-to "/"))
 
 (defn list-blocks []
-  "TODO")
+  (:name (session/session-get :current-user)))
 
 (def security-policy
   [#"/blocks.*" [:user :nossl]
@@ -58,8 +58,8 @@
   (PUT    "/blocks/:id" [& params]         (update-block! params))
   (DELETE "/blocks/:id" [id]               (db/delete-block! id))
   (GET    "/login"      []                 (response/resource "login.html"))
-  (POST   "/auth_callback" [& params]      (loginza/check-auth params))
-;  (GET    "/logout")    []                 ()
+  (POST   "/auth_callback" [& params]      (loginza/auth-callback params))
+  (GET    "/logout"     []                 (loginza/logout "/"))
   (route/not-found "Page not found"))
 
 (def app
