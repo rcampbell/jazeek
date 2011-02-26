@@ -27,12 +27,13 @@
                                                   :value "PUT"}}))
   [:textarea] (content text))
 
-(deftemplate list-view "list.html" [blocks]
+(deftemplate list-view "list.html" [blocks name]
+  [:#username] (content name)
   {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
                            [:a]  (do-> (set-attr :href (str "/blocks/" id))
                                        (content id))
                            [:dd] (content (db/clob->str text))))
-
+                           
 (defn create-block! [text]
   (let [id (db/create-block! text)]
     (moved-to (str "/blocks/" id))))
@@ -48,8 +49,6 @@
   (db/delete-block! id)
   (moved-to "/"))
 
-(defn list-blocks []
-  (:name (session/session-get :current-user)))
 
 (def security-policy
   [#"/blocks/.*" [:user :nossl]
@@ -57,7 +56,7 @@
 
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
-  (GET    "/blocks/"    []                 (list-view @(db/list-blocks)))
+  (GET    "/blocks/"    []                 (list-view @(db/list-blocks) (:name (session/session-get :current-user))))
   (POST   "/blocks/"    [& {:keys [text]}] (create-block! text))
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))
