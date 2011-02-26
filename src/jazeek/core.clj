@@ -3,6 +3,7 @@
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
+            [ring.middleware.session :as session]
             [jazeek.db :as db]))
 
 (letfn [(redirect [status]
@@ -15,12 +16,15 @@
   (let [id (db/create-block! text)]
     (moved-to (str "/blocks/" id))))
 
-
+(defn- clob-to-string [clob]
+  "Turn a JdbcClob into a String"
+  (with-open [rdr (java.io.BufferedReader. (.getCharacterStream clob))]
+    (apply str (line-seq rdr))))
 
 (defn get-block [id]
   (let [clob (:text (first @(db/get-block id)))
-        text (.getSubString clob 1 (.length clob))] ; TODO: replace w/reader
-    text)) 
+        text (clob-to-string clob)]
+    text))
 
 (defn update-block! [params]
   (println ">>> " params)
@@ -36,6 +40,16 @@
 (defn list-blocks []
   "TODO")
 
+(defn show-session
+  [req]
+  (str (type req)))
+
+(defn wrap-auth-check [handler]
+  (fn [{:keys [request-method uri] :as req}]
+    (let [resp (handler req)]
+      (println uri)
+      resp)))
+
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
   (GET    "/blocks/"    []                 (list-blocks))
@@ -43,7 +57,9 @@
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))
   (DELETE "/blocks/:id" [id]               (db/delete-block! id))
+  (GET    "/session/"   [& req]                 (show-session req))
   (route/not-found "Page not found"))
 
 (def app
-  (handler/site main-routes))
+  (-> (handler/site main-routes)
+      wrap-auth-check))

@@ -5,7 +5,8 @@
                  [compojure "0.6.0"]
                  [enlive "1.0.0-SNAPSHOT"]
                  [clojureql "1.0.1"]
-                 [com.h2database/h2 "1.2.147"]]
+                 [com.h2database/h2 "1.2.147"]
+                 [sandbar/sandbar "0.3.0"]]
   :dev-dependencies [[swank-clojure "1.2.1"]
                      [lein-ring "0.3.2"]]
   :ring {:handler jazeek.core/app})
