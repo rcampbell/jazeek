@@ -3,9 +3,14 @@
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
-            [ring.middleware.session :as session]
-            [jazeek.db :as db]))
+            [ring.util.response :as  ring-response]
+            [sandbar.stateful-session :as session]
+            [sandbar.auth :as auth]
+            [jazeek.db :as db]
+            [jazeek.loginza :as loginza]))
 
+
+;; TODO this can be replaced with ring-response/redirect + chaning :status
 (letfn [(redirect [status]
                   (fn [uri] {:status status
                             :headers {"Location" uri}}))]
@@ -40,15 +45,10 @@
 (defn list-blocks []
   "TODO")
 
-(defn show-session
-  [req]
-  (str (type req)))
-
-(defn wrap-auth-check [handler]
-  (fn [{:keys [request-method uri] :as req}]
-    (let [resp (handler req)]
-      (println uri)
-      resp)))
+(def security-policy
+  [#"/blocks.*" [:user :nossl]
+   #"/login.*"  [:any :nossl]
+   #".*"        [:any :nossl]])
 
 (defroutes main-routes
   (GET    "/"           []                 (response/resource "index.html"))
@@ -57,9 +57,12 @@
   (GET    "/blocks/:id" [id]               (get-block id))
   (PUT    "/blocks/:id" [& params]         (update-block! params))
   (DELETE "/blocks/:id" [id]               (db/delete-block! id))
-  (GET    "/session/"   [& req]                 (show-session req))
+  (GET    "/login"      []                 (response/resource "login.html"))
+  (POST   "/auth_callback" [& params]      (loginza/check-auth params))
+;  (GET    "/logout")    []                 ()
   (route/not-found "Page not found"))
 
 (def app
   (-> (handler/site main-routes)
-      wrap-auth-check))
+      (auth/with-security security-policy loginza/loginza-authenticator)
+      session/wrap-stateful-session))
