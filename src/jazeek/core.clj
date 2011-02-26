@@ -46,8 +46,7 @@
   (:name (session/session-get :current-user)))
 
 (def security-policy
-  [#"/blocks.*" [:user :nossl]
-   #"/login.*"  [:any :nossl]
+  [#"/blocks/.*" [:user :nossl]
    #".*"        [:any :nossl]])
 
 (defroutes main-routes
