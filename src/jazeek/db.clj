@@ -42,6 +42,7 @@
     (cql/update-in! blocks (cql/where (= :id id)) {:text text}))
   (defn delete-block! [id]
     (cql/disj! blocks (cql/where (= :id id)))))
+
 ;;TODO: make this defn- ? Test will not be able to use it than... 
  
 (defn clob-to-string [clob]
