@@ -81,7 +81,11 @@
   ;; C
   (defn create-info!
     [identity account-id info]
-    (conj! auth-info {:identity identity :account_id account-id :name "Test" :email "email-here" :gender "M"}) true)
+    (conj! auth-info {:identity identity
+                      :account_id account-id
+                      :name "Test"
+                      :email "email-here"
+                      :gender "M"}) identity)
   ;; R
   (defn get-info [identity]
     (let
@@ -97,7 +101,9 @@
   (let [create-id! (id-generator account :id)]
     (defn create-account! [name email]
       (let [id (create-id!)]
-          (conj! account {:id id :name name :email email})
+        (conj! account {:id id
+                        :name name
+                        :email email})
           id)))
   ;; R
   (defn get-account [id]

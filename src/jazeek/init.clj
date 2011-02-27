@@ -17,7 +17,8 @@
     (sql/create-table :account
                       [:id "varchar(6)" "PRIMARY KEY"]
                       [:name :text]
-                      [:email :text])
+                      [:email :text]
+                      [:photo :text])
 
     (sql/create-table :blocks
                       [:id "varchar(6)" "PRIMARY KEY"]

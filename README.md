@@ -7,7 +7,6 @@ and there is no stacktrace, just an empty response.
 - add/remove identities from account
 - merge accounts (logged in with google, logged in with twitter, now
 have two accounts for each identity)
-- decouple loginza from sandbar
 - jquery + jquery-ui 
 - remember-me (login seems stable, time to skip it)
 - move sessions to DB

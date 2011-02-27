@@ -13,28 +13,45 @@
             [jazeek.loginza :as loginza]))
 
 
-;; TODO this can be replaced with ring-response/redirect + chaning :status
+; TODO this can be replaced with ring-response/redirect + chaning :status
 (letfn [(redirect [status]
                   (fn [uri] {:status status
                             :headers {"Location" uri}}))]
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
-(defn load-account!
-  "Updates account for :current-user"
-  [account-id]
-  (let [user (auth/current-user)
-        account (db/get-account account-id)]
-    (session/session-put! :current-user
-                          (conj user {:account account}))))
+(defn get-roles-for-account
+  [account]
+  #{:user})
 
-(defn create-current-user!
-  [info]
-  (session/session-put! :current-user
-                        {:name (:full_name (:name info))
-                         :info info
-                         :email (:email info)
-                         :roles #{:user}}))
+(defn- get-gravatar
+  [account]
+  (let [email  (.toLowerCase (.trim (:email account)))
+        hash (.toString (new BigInteger
+                             1
+                             (.digest (java.security.MessageDigest/getInstance "MD5") (.getBytes email "UTF-8"))) 16)]
+    (str "http://www.gravatar.com/avatar/"
+         (loop [result hash]
+           (if (not (= 32 (count result)))
+             (recur (str "0" result))
+                   result)) 
+         "?s=128&d=identicon&r=PG")))
+
+(defn- get-photo-for-account
+  [account]
+  (if (not (nil? (:email account)))
+    (get-gravatar account)
+    nil))
+
+(defn do-login-user!
+  [account-id]
+  (let [account (db/get-account account-id)
+        roles (get-roles-for-account account)]
+    (session/session-put! :current-user
+                          {:name (:name account)
+                           :email (:email account)
+                           :account account
+                           :roles roles})))
 
 (defn current-useremail
   []
@@ -45,9 +62,12 @@
   (:id (:account (auth/current-user))))
 
 
-(deftemplate current-user-view "user/user.html" [name email]
-  [:#name] (content name)
-  [:#email] (content email))
+
+
+(deftemplate user-view "user/user.html" [account]
+  [:#name] (content (:name account))
+  [:#email] (content (:email account))
+  [:#photo] (set-attr :src (get-photo-for-account account)))
 
 (deftemplate edit-view "block-form.html" [id text]
   [:form]     (do-> (set-attr :action (str "/block/" id))
@@ -56,8 +76,9 @@
                                                   :value "PUT"}}))
   [:textarea] (content text))
 
-(deftemplate list-view "list.html" [blocks name]
-  [:#username] (content name)
+(deftemplate list-view "list.html" [blocks name account-id]
+  [:#username] (do-> (content name)
+                     (set-attr :href (str "/user/" account-id)))
   {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
                            [:a]  (do-> (set-attr :href (str "/block/" id))
                                        (content id))
@@ -86,20 +107,22 @@
         info (db/get-info identity)
         name (:full_name (:name result))
         email (:email result)]
-    (create-current-user! result)
     (if (nil? info)      
       (let [new-account-id (db/create-account! name email)]
         (db/create-info! identity new-account-id result)        
-        (load-account! new-account-id))
-      (load-account! (:account_id info)))))
+        (do-login-user! new-account-id))
+      (do-login-user! (:account_id info)))))
 
 (defn auth-failed-callback
   "Callback from loginza if auth failed."
   [result]
   (println "This code executed after failed auth"))
 
+
 (defroutes main-routes
   (GET    "/"              []                 (ring-response/redirect "/blocks/"))
+
+;  (GET    "/js/*"      []   (response/resource "js/jquery-1.5.1.min.js"))
 
   (GET    "/block/"        []                 (response/resource "block-form.html"))
   (POST   "/block/"        [& {:keys [text]}] (create-block! text))
@@ -107,16 +130,18 @@
   (PUT    "/block/:id"     [& params]         (update-block! params))
   (DELETE "/block/:id"     [id]               (delete-block! id))
 
-  (GET    "/blocks/"       []                 (list-view @(db/list-blocks (current-account-id)) (auth/current-username)))
+  (GET    "/blocks/"       []                 (list-view @(db/list-blocks (current-account-id))
+                                                         (auth/current-username)
+                                                         (current-account-id)))
 
-  (GET    "/user/"         []                 (current-user-view (auth/current-username) (current-useremail)))
-  
+  (GET    "/user/:id"      [id]               (user-view (db/get-account id)))
+
   (GET    "/login"         []                 (response/resource "login.html"))
+  (GET    "/logout"        []                 (loginza/logout "/"))
   (POST   "/auth_callback" [& params]         ((loginza/create-auth-handler
                                                 auth-success-callback
                                                 auth-failed-callback) params))
-  (GET    "/logout"        []                 (loginza/logout "/"))
-  
+  (route/resources "/")
   (route/not-found "Page not found"))
 
 (def security-policy
