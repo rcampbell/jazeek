@@ -24,29 +24,31 @@
   [result]
   (contains? result :identity))
 
-;; TODO implement this
-(defn- roles-for-identity
-  "Returns a set of roles for given identity"
-  [identity]
-  #{:user})
+(defn create-auth-handler
+  "Check authentication results and do redirect. Two callbacks (success and failure) can be registered. They must
+  take one parameter and will be called right before redirect"
+  ([]
+     (auth-callback nil nil))
+  ([success-callback failure-callback]
+     (fn [req]
+       (let [result (check-token (:token req))
+             stored-uri (or (session/session-get :auth-redirect-uri) "/")
+             success (if (= "/login" stored-uri) "/" stored-uri)
+             failure "/login"]
+         (if (success? result)
+           (do
+             (session/session-put! :current-user
+                                   {:name (:full_name (:name result))
+                                    :info result
+                                    :email (:email result)
+                                    :roles (roles-for-identity (:identity result) )})
+             (session/session-delete-key! :auth-redirect-uri)
+             (if (fn? success-callback) (success-callback result))
 
-(defn auth-callback
-  "Check authentication results and do redirect"
-  [req]
-  (let [result (check-token (:token req))
-        success (or (session/session-get :auth-redirect-uri)
-                    "/")
-        failure "/login"]
-    (if (success? result)
-      (do
-        (session/session-put! :current-user
-                              {:name (:full_name (:name result))
-                               :identity (:identity result)
-                               :email (:email result)
-                               :roles (roles-for-identity (:identity result) )})
-        (session/session-delete-key! :auth-redirect-uri)
-        (response/redirect success))
-      (response/redirect failure))))
+             (response/redirect success))
+           (do
+             (if (fn? failure-callback) (failure-callback result))
+             (response/redirect failure)))))))
 
 (defn logout
   "Logs current user out"

@@ -20,8 +20,12 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
+(deftemplate current-user-view "user/user.html" [name email]
+  [:#name] (content name)
+  [:#email] (content email))
+
 (deftemplate edit-view "block-form.html" [id text]
-  [:form]     (do-> (set-attr :action (str "/blocks/" id))
+  [:form]     (do-> (set-attr :action (str "/block/" id))
                     (prepend {:tag :input :attrs {:type "hidden"
                                                   :name "_method"
                                                   :value "PUT"}}))
@@ -35,8 +39,9 @@
                            [:dd] (content (db/clob->str text))))
                            
 (defn create-block! [text]
-  (let [id (db/create-block! text)]
-    (moved-to (str "/blocks/" id))))
+  (let [id (db/create-block! text (current-account-id))]
+    (do
+      (moved-to (str "/block/" id)))))
 
 (defn get-block [id]
   (->> @(db/get-block id) first :text db/clob->str (edit-view id)))
@@ -47,31 +52,68 @@
 
 (defn delete-block! [id]
   (db/delete-block! id)
-  (moved-to "/"))
+  (moved-to "/blocks/"))
 
+(defn load-account!
+  "Updates account for :current-user"
+  [account-id]
+  (let [user (auth/current-user)
+        account (db/get-account account-id)]
+    (session/session-put! :current-user
+                          (conj user {:account account}))))
+
+(defn auth-success-callback
+  "Callback from loginza if auth was successful"
+  [result]
+  (let [identity (:identity result)
+        info (db/get-info identity)
+        name (:full_name (:name result))
+        email (:email result)]
+    (if (nil? info)
+      (let [new-account-id (db/create-account! name email)]
+        (db/create-info! identity new-account-id result)
+        (load-account! new-account-id))
+      (load-account! (:account_id info)))))
+
+(defn auth-failed-callback
+  "Callback from loginza if auth failed."
+  [result]
+  (println "This code executed after failed auth"))
+
+(defn current-useremail
+  []
+  (:email (auth/current-user)))
+
+(defn current-account-id
+  []
+  (:id (:account (auth/current-user))))
+
+(defroutes main-routes
+  (GET    "/"              []                 (ring-response/redirect "/blocks/"))
+
+  (GET    "/block/"        []                 (response/resource "block-form.html"))
+  (POST   "/block/"        [& {:keys [text]}] (create-block! text))
+  (GET    "/block/:id"     [id]               (get-block id))
+  (PUT    "/block/:id"     [& params]         (update-block! params))
+  (DELETE "/block/:id"     [id]               (delete-block! id))
+
+  (GET    "/blocks/"       []                 (list-view @(db/list-blocks (current-account-id)) (auth/current-username)))
+
+  (GET    "/user/"         []                 (current-user-view (auth/current-username) (current-useremail)))
+  
+  (GET    "/login"         []                 (response/resource "login.html"))
+  (POST   "/auth_callback" [& params]         ((loginza/create-auth-handler
+                                                auth-success-callback
+                                                auth-failed-callback) params))
+  (GET    "/logout"        []                 (loginza/logout "/"))
+  
+  (route/not-found "Page not found"))
 
 (def security-policy
   [#"/blocks/.*" [:user :nossl]
    #"/block/.*" [:user :nossl]
+   #"/user/.*" [:user :nossl]
    #".*"        [:any :nossl]])
-
-
-(defroutes main-routes
-  (GET    "/"           []                 (ring-response/redirect "/blocks/"))
-
-  (GET    "/block/"    []                 (response/resource "block-form.html"))
-  (POST   "/block/"    [& {:keys [text]}] (create-block! text))
-  (GET    "/block/:id" [id]               (get-block id))
-  (PUT    "/block/:id" [& params]         (update-block! params))
-  (DELETE "/block/:id" [id]               (delete-block! id))
-
-  (GET    "/blocks/"    []                 (list-view @(db/list-blocks) (:name (session/session-get :current-user))))
-  
-  (GET    "/login"      []                 (response/resource "login.html"))
-  (POST   "/auth_callback" [& params]      (loginza/auth-callback params))
-  (GET    "/logout"     []                 (loginza/logout "/"))
-  
-  (route/not-found "Page not found"))
 
 (def app
   (-> (handler/site main-routes)
