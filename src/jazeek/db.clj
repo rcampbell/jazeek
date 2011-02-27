@@ -103,5 +103,5 @@
   (defn get-account [id]
     (row->map (first
                @(-> (select account (where (= :id id)))
-                    (project [:email :name]))))))
+                    (project [:email :name :id]))))))
 

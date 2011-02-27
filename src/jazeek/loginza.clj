@@ -28,7 +28,7 @@
   "Check authentication results and do redirect. Two callbacks (success and failure) can be registered. They must
   take one parameter and will be called right before redirect"
   ([]
-     (auth-callback nil nil))
+     (create-auth-handler nil nil))
   ([success-callback failure-callback]
      (fn [req]
        (let [result (check-token (:token req))
@@ -37,14 +37,8 @@
              failure "/login"]
          (if (success? result)
            (do
-             (session/session-put! :current-user
-                                   {:name (:full_name (:name result))
-                                    :info result
-                                    :email (:email result)
-                                    :roles (roles-for-identity (:identity result) )})
              (session/session-delete-key! :auth-redirect-uri)
              (if (fn? success-callback) (success-callback result))
-
              (response/redirect success))
            (do
              (if (fn? failure-callback) (failure-callback result))

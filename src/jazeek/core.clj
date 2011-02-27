@@ -20,6 +20,31 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
+(defn load-account!
+  "Updates account for :current-user"
+  [account-id]
+  (let [user (auth/current-user)
+        account (db/get-account account-id)]
+    (session/session-put! :current-user
+                          (conj user {:account account}))))
+
+(defn create-current-user!
+  [info]
+  (session/session-put! :current-user
+                        {:name (:full_name (:name info))
+                         :info info
+                         :email (:email info)
+                         :roles #{:user}}))
+
+(defn current-useremail
+  []
+  (:email (auth/current-user)))
+
+(defn current-account-id
+  []
+  (:id (:account (auth/current-user))))
+
+
 (deftemplate current-user-view "user/user.html" [name email]
   [:#name] (content name)
   [:#email] (content email))
@@ -54,14 +79,6 @@
   (db/delete-block! id)
   (moved-to "/blocks/"))
 
-(defn load-account!
-  "Updates account for :current-user"
-  [account-id]
-  (let [user (auth/current-user)
-        account (db/get-account account-id)]
-    (session/session-put! :current-user
-                          (conj user {:account account}))))
-
 (defn auth-success-callback
   "Callback from loginza if auth was successful"
   [result]
@@ -69,9 +86,10 @@
         info (db/get-info identity)
         name (:full_name (:name result))
         email (:email result)]
-    (if (nil? info)
+    (create-current-user! result)
+    (if (nil? info)      
       (let [new-account-id (db/create-account! name email)]
-        (db/create-info! identity new-account-id result)
+        (db/create-info! identity new-account-id result)        
         (load-account! new-account-id))
       (load-account! (:account_id info)))))
 
@@ -79,14 +97,6 @@
   "Callback from loginza if auth failed."
   [result]
   (println "This code executed after failed auth"))
-
-(defn current-useremail
-  []
-  (:email (auth/current-user)))
-
-(defn current-account-id
-  []
-  (:id (:account (auth/current-user))))
 
 (defroutes main-routes
   (GET    "/"              []                 (ring-response/redirect "/blocks/"))
