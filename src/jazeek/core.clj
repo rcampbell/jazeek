@@ -6,7 +6,7 @@
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
-            [ring.util.response :as  ring-response]
+            [ring.util.response :as ring-response]
             [sandbar.stateful-session :as session]
             [sandbar.auth :as auth]
             [jazeek.db :as db]
@@ -20,7 +20,7 @@
   (def ^{:doc "moved permanently" :private true}
     moved-to  (redirect 301)))
 
-(deftemplate edit-view "index.html" [id text]
+(deftemplate edit-view "block-form.html" [id text]
   [:form]     (do-> (set-attr :action (str "/blocks/" id))
                     (prepend {:tag :input :attrs {:type "hidden"
                                                   :name "_method"
@@ -30,7 +30,7 @@
 (deftemplate list-view "list.html" [blocks name]
   [:#username] (content name)
   {[:dt] [:dd]} (clone-for [{:keys [id text]} blocks]
-                           [:a]  (do-> (set-attr :href (str "/blocks/" id))
+                           [:a]  (do-> (set-attr :href (str "/block/" id))
                                        (content id))
                            [:dd] (content (db/clob->str text))))
                            
@@ -52,18 +52,25 @@
 
 (def security-policy
   [#"/blocks/.*" [:user :nossl]
+   #"/block/.*" [:user :nossl]
    #".*"        [:any :nossl]])
 
+
 (defroutes main-routes
-  (GET    "/"           []                 (response/resource "index.html"))
+  (GET    "/"           []                 (ring-response/redirect "/blocks/"))
+
+  (GET    "/block/"    []                 (response/resource "block-form.html"))
+  (POST   "/block/"    [& {:keys [text]}] (create-block! text))
+  (GET    "/block/:id" [id]               (get-block id))
+  (PUT    "/block/:id" [& params]         (update-block! params))
+  (DELETE "/block/:id" [id]               (delete-block! id))
+
   (GET    "/blocks/"    []                 (list-view @(db/list-blocks) (:name (session/session-get :current-user))))
-  (POST   "/blocks/"    [& {:keys [text]}] (create-block! text))
-  (GET    "/blocks/:id" [id]               (get-block id))
-  (PUT    "/blocks/:id" [& params]         (update-block! params))
-  (DELETE "/blocks/:id" [id]               (delete-block! id))
+  
   (GET    "/login"      []                 (response/resource "login.html"))
   (POST   "/auth_callback" [& params]      (loginza/auth-callback params))
   (GET    "/logout"     []                 (loginza/logout "/"))
+  
   (route/not-found "Page not found"))
 
 (def app
