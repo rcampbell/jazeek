@@ -31,7 +31,7 @@
   [v]
   (if (clob? v) (clob->str v) v))
 
-(defn- row->map
+(defn row->map
   "Converts all clobs to strings"
   [row]
   (into {} (for [[k v] row] [k (conver-val v)])))
@@ -70,11 +70,11 @@
 
   ;; Find
   (defn list-blocks [account_id]
-    (select blocks (where (= :account_id account_id))))
+     (select blocks (where (= :account_id account_id))))
 
-  (defn all-blocks
-    []
-    blocks))
+  
+  (defn all-blocks [account_id]
+    (map row->map @(select blocks (where (= :account_id account_id))))))
   
 
 (let [auth-info (table :auth_info)]
