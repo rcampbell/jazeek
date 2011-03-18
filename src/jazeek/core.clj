@@ -7,16 +7,14 @@
             [compojure.handler :as handler]
             [compojure.response :as response]
             [ring.util.response :as ring-response]
-            [jazeek.db :as db]
             [jazeek.person :as person]
             [jazeek.block :as block]))
 
 
 (letfn [(redirect [status]
                   (fn [uri] (assoc (ring-response/redirect uri) :status status)))]
-  (def ^{:doc "moved permanently" :private true}
+  (def ^{:doc "Redirect with 301 code: 'Moved permanently'" :private true}
     moved-to  (redirect 301)))
-
 
 (deftemplate user-view "user/user.html" [account]
   [:#name] (content (:name account))
@@ -31,7 +29,7 @@
   [:textarea] (content text))
 
 (defn- snippet
-  "Returst a snippet of the text"
+  "Returst a snippet of a text"
   [text]
   (let [limit 20
         stub "..."
@@ -49,8 +47,7 @@
 
 (defn create-block! [text account-id]
   (let [id (block/create! text account-id)]
-    (do
-      (moved-to (str "/block/" id)))))
+    (moved-to (str "/block/" id))))
 
 (defn delete-block! [id]
   (block/delete! id)
@@ -59,7 +56,6 @@
 (defn get-block [id] (edit-view id (block/one id)))
 
 (defn update-block! [{id :id, :as block}]
-  ""
   (block/update! block)
   (moved-to "/blocks/"))
 
@@ -77,7 +73,7 @@
                                                          (person/current-username)
                                                          (person/current-account-id)))
 
-  (GET    "/user/:id"      [id]               (user-view (db/get-account id)))
+  (GET    "/user/:id"      [id]               (user-view (person/get-account id)))
 
   (GET    "/login"         []                 (response/resource "login.html"))
   (GET    "/logout"        []                 (person/logout))

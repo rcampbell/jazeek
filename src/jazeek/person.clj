@@ -25,6 +25,10 @@
     (get-gravatar account)
     nil))
 
+(defn get-account
+  ""
+  [account-id]
+  (db/get-account account-id))
 
 
                                         ; Security related code
