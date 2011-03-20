@@ -5,7 +5,7 @@
   (db/create-block! text account-id))
 
 (defn one [id]
-  (->> @(db/get-block id) first :text db/clob->str))
+  (->> (db/get-block id) :text))
 
 (defn update! [block]
   (db/update-block! block))

@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [compile distinct drop take sort conj! disj!])
   (:use clojureql.core))
 
-;; TODO:
 
 (def db
   {:classname   "org.h2.Driver"
@@ -13,7 +12,7 @@
 
 (open-global db)
 
-(def *id-length* 6)
+(def *id-length* 8)
 
 ;; FIXME clob->str function is used in core.clj, but declared here.
 ;; db leaked to core.
@@ -56,11 +55,11 @@
   (let [create-id! (id-generator blocks :id)]
     (defn create-block! [text account_id]
       (let [id (create-id!)]
-          (conj! blocks {:id id :text text :account_id account_id})
+          (conj! blocks {:id id :text text :account_id account_id :created (new java.util.Date)})
           id)))
   ;; R
   (defn get-block [id]
-    (project (select blocks (where (= :id id))) [:text]))
+    (row->map (first @(project (select blocks (where (= :id id))) [:text]))))
   ;; U
   (defn update-block! [{:keys [id text]}]
     (update-in! blocks (where (= :id id)) {:text text}))
@@ -72,9 +71,11 @@
   (defn list-blocks [account_id]
      (select blocks (where (= :account_id account_id))))
 
-  
   (defn all-blocks [account_id]
-    (map row->map @(select blocks (where (= :account_id account_id))))))
+    (map row->map
+         @(-> blocks
+              (select (where (= :account_id account_id)))
+              (sort [:created#asc])))))
   
 
 (let [auth-info (table :auth_info)]

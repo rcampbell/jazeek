@@ -10,20 +10,23 @@
     (-> (sql/drop-table :auth_info) (try (catch Exception e)) with-out-str)
     (-> (sql/drop-table :account) (try (catch Exception e)) with-out-str)))
 
+(def key-type "varchar(8)")
+
 (defn create-schema
   "Creates schema..."
   []
   (do
     (sql/create-table :account
-                      [:id "varchar(6)" "PRIMARY KEY"]
+                      [:id key-type  "PRIMARY KEY"]
                       [:name :text]
                       [:email :text]
                       [:photo :text])
 
     (sql/create-table :blocks
-                      [:id "varchar(6)" "PRIMARY KEY"]
+                      [:id key-type "PRIMARY KEY"]
                       [:text :text]
-                      [:account_id "varchar(6)" "references account(id)" ])
+                      [:account_id key-type "references account(id)" ]
+                      [:created :timestamp "NOT NULL" :default "now()"])
     
     (sql/create-table :auth_info
                       [:identity :text "PRIMARY KEY"]
@@ -33,7 +36,7 @@
                       [:email :text]
                       [:gender "varchar(1)"]
                       [:dob :text]
-                      [:account_id "varchar(6)" "references account(id)" ])
+                      [:account_id key-type "references account(id)" ])
        ))
 
 (sql/with-connection jazeek.db/db

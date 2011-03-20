@@ -39,10 +39,9 @@
 (deftemplate list-view "list.html" [blocks name account-id]
   [:#username] (do-> (content name)
                      (set-attr :href (str "/user/" account-id)))
-  {[:dt] [:dd]}  (clone-for [{:keys [id text]} blocks]
-             [:a]  (do-> (set-attr :href (str "/block/" id))
-                         (content id))
-             [:dd] (content (snippet text))))
+  {[:#header] [:#content]}  (clone-for [{:keys [id text]} blocks]
+             [:a]  (content (snippet text))
+             [:#content] (content text)))
 
 
 (defn create-block! [text account-id]
@@ -89,7 +88,7 @@
    #"/user/.*"   [:user :nossl]
    #".*"         [:any :nossl]])
 
-(def app
+(defonce app
   (-> (handler/site main-routes)
       (sandbar.auth/with-security security-policy person/authenticator)
       sandbar.stateful-session/wrap-stateful-session))

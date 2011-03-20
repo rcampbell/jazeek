@@ -2,17 +2,46 @@
           "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
   <head>
-    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"
+    />
+
+    <!-- Load jQuery -->
+    <script type="text/javascript"
+    src="http://www.google.com/jsapi"></script>
+
+    <script type="text/javascript">
+      google.load("jquery", "1.5.1");
+      google.load("jqueryui", "1.8.11");
+    </script>
+
     <title>Jazeek</title>
+
   </head>
   <body>
     <h3><a id="username" href="#">User Name</a></h3>
-    <dl>
-      <lh>Blocks</lh>
+    
+    <a href="/block/">Create Block</a>
+
+    <script>
+      $(function() {
+          $( "#accordion" ).accordion();
+      });
+    </script>
+
+    <div id ="main">
+    
+      <div id="accordion">
+        <h3 id="header"><a href="#">123456</a></h3>
+        <div id="content"><a href="#">Some text</a></div>
+      </div>
+    </div>
+
+
+    <!--<dl>
       <dt><a href="/block/123456">123456</a></dt>
       <dd>Some text</dd>
     </dl>
-    <br/>
-    <a href="/block/">Create Block</a>
+    <br/>-->
+   
   </body>
 </html>
