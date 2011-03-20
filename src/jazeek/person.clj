@@ -30,6 +30,11 @@
   [account-id]
   (db/get-account account-id))
 
+(defn all-identities
+  ""
+  [account]
+  (db/list-auths (:id account)))
+
 
                                         ; Security related code
 

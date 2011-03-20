@@ -19,7 +19,9 @@
 (deftemplate user-view "user/user.html" [account]
   [:#name] (content (:name account))
   [:#email] (content (:email account))
-  [:#photo] (set-attr :src (person/get-photo account)))
+  [:#photo] (set-attr :src (person/get-photo account))
+  [:#openids :li] (clone-for [item (person/all-identities account)]
+                             (content (:provider item))))
 
 (deftemplate edit-view "block-form.html" [id text]
   [:form]     (do-> (set-attr :action (str "/block/" id))

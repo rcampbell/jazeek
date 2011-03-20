@@ -27,14 +27,14 @@
     :doc "Return true if x is a java.sql.Clob" }
   clob? (fn clob? [x] (instance? java.sql.Clob x)))
 
-(defn- conver-val
+(defn- convert-val
   [v]
   (if (clob? v) (clob->str v) v))
 
 (defn row->map
   "Converts all clobs to strings"
   [row]
-  (into {} (for [[k v] row] [k (conver-val v)])))
+  (into {} (for [[k v] row] [k (convert-val v)])))
 
 (defn- id-generator
   "Returns an id generator function for table. Will search for duplicates in column id-col"
@@ -81,11 +81,14 @@
   ;; C
   (defn create-info!
     [identity account-id info]
-    (conj! auth-info {:identity identity
-                      :account_id account-id
-                      :name "Test"
-                      :email "email-here"
-                      :gender "M"}) identity)
+    (let [provider (:provider info)]
+      (conj! auth-info {:identity identity
+                        :account_id account-id
+                        :name "Test"
+                        :email "email-here"
+                        :gender "M"
+                        :provider provider})
+      identity))
   ;; R
   (defn get-info [identity]
     (let
@@ -93,7 +96,11 @@
                     (project [:email :name :gender :account_id]))]
       (if (empty? result)
         nil
-        (row->map (first result))))))
+        (row->map (first result)))))
+
+    ;; Find
+  (defn list-auths [account_id]
+    (map row->map @(select auth-info (where (= :account_id account_id)))))
 
 
 (let [account (table :account)]
@@ -110,4 +117,14 @@
     (row->map (first
                @(-> (select account (where (= :id id)))
                     (project [:email :name :id]))))))
+
+
+                                        ; debug
+(defn- show-auths
+  []
+  (map #(println (str % "\n")) @(table :auth_info)))
+
+(defn- show-accounts
+  []
+  (map #(println (str % "\n")) @(table :account))))
 
