@@ -89,7 +89,7 @@
    #"/user/.*"   [:user :nossl]
    #".*"         [:any :nossl]])
 
-(def app
+(defonce app
   (-> (handler/site main-routes)
       (sandbar.auth/with-security security-policy person/authenticator)
       sandbar.stateful-session/wrap-stateful-session))
