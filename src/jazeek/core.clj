@@ -28,20 +28,14 @@
                                                   :value "PUT"}}))
   [:textarea] (content text))
 
-(defn- snippet
-  "Returst a snippet of a text"
-  [text]
-  (let [limit 20
-        stub "..."
-        offset (- limit (count stub))]
-    (if (>= (count text) limit)  (str (.substring text 0 offset) "...") text)))
-
 (deftemplate list-view "list.html" [blocks name account-id]
   [:#username] (do-> (content name)
                      (set-attr :href (str "/user/" account-id)))
-  {[:#header] [:#content]}  (clone-for [{:keys [id text]} blocks]
-             [:a]  (content (snippet text))
-             [:#content] (content text)))
+  [:#item]  (clone-for [{:keys [id text]} blocks]
+                       [:a]  (do->
+                              (content (str "Block: " id))
+                              (set-attr :href (str "/block/" id)))                       
+                       [:#content] (content text)))
 
 
 (defn create-block! [text account-id]

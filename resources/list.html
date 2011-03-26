@@ -31,9 +31,9 @@
         <div class="colleft">
           <div class="col1">
            
-            <div id="item">
-              <h3 id="header"><a href="#">123456</a></h3>
-              <div id="content"><a href="#">Some text</a></div>
+            <div id="item" class="card" style="cursor: pointer; ">
+              <p id="header"><a href="#">123456</a></p>
+              <p id="content">Some text</p>
             </div>
 
           </div>
@@ -49,6 +49,26 @@
 
     <div id="footer">
     </div>
+
+    <script>
+      $(function() {
+          $(".card").draggable();
+          $(".col2").droppable({
+              drop: function( event, ui ) {
+                 $( "#dialog-modal" ).dialog({
+                     height: 140,
+                     modal: true
+                     });
+              }
+          });
+      });
+    </script>
+
+    <div id="dialog-modal" title="Basic modal dialog" style="display: none;">
+      <p>Dropped!</p>
+    </div>
+
+
 
   </body>
 </html>

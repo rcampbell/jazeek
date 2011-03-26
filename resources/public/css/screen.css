@@ -157,3 +157,10 @@ img {
 	padding:10px;
 	margin:0;
 }
+
+.card {
+    display: block; float: left; width: 150px; height: 100px;
+    padding: 2px; margin: 2px; border: 1px solid #666;
+    overflow: hidden;
+    font-weight: normal;
+}
