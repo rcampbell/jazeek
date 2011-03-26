@@ -9,6 +9,9 @@
     <script type="text/javascript"
     src="http://www.google.com/jsapi"></script>
 
+    <link rel="stylesheet" type="text/css" href="/css/screen.css"
+    media="screen" />
+
     <script type="text/javascript">
       google.load("jquery", "1.5.1");
       google.load("jqueryui", "1.8.11");
@@ -18,30 +21,34 @@
 
   </head>
   <body>
-    <h3><a id="username" href="#">User Name</a></h3>
-    
-    <a href="/block/">Create Block</a>
+    <div id="header">
+      <h3><a id="username" href="#">User Name</a></h3>
+      <a href="/block/">Create Block</a>
+    </div>
 
-    <script>
-      $(function() {
-          $( "#accordion" ).accordion();
-      });
-    </script>
+    <div class="colmask blogstyle">
+      <div class="colmid">
+        <div class="colleft">
+          <div class="col1">
+           
+            <div id="item">
+              <h3 id="header"><a href="#">123456</a></h3>
+              <div id="content"><a href="#">Some text</a></div>
+            </div>
 
-    <div id ="main">
-    
-      <div id="accordion">
-        <h3 id="header"><a href="#">123456</a></h3>
-        <div id="content"><a href="#">Some text</a></div>
+          </div>
+          <div class="col2">
+            Test 2
+          </div>
+          <div class="col3">
+            Test 3
+          </div>
+        </div>
       </div>
     </div>
 
+    <div id="footer">
+    </div>
 
-    <!--<dl>
-      <dt><a href="/block/123456">123456</a></dt>
-      <dd>Some text</dd>
-    </dl>
-    <br/>-->
-   
   </body>
 </html>
