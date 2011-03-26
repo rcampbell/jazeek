@@ -1,6 +1,8 @@
 ;;; Run with (load "jazeek/init") to reset the database
 
-(require '[clojure.contrib.sql :as sql])
+(require
+  '[clojure.contrib.sql :as sql]
+  '[jazeek.db :as db])
 
 (defn drop-schema
   "Drops schema..."
@@ -39,7 +41,7 @@
                       [:account_id key-type "references account(id)" ])
        ))
 
-(sql/with-connection jazeek.db/db
+(sql/with-connection db/db
   (drop-schema)
   (create-schema))
 
