@@ -5,37 +5,85 @@
     <meta http-equiv="content-type" content="text/html;charset=utf-8" />
     <title>Jazeek</title>
 
+    <link type="text/css"
+    href="/css/ui-darkness/jquery-ui-1.8.11.custom.css" rel="Stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="/css/screen.css"
+    media="screen" />
+
     <!-- Load jQuery -->
     <script type="text/javascript"
     src="http://www.google.com/jsapi"></script>
 
     <script type="text/javascript">
       google.load("jquery", "1.5.1");
+      google.load("jqueryui", "1.8.11");
     </script>
 
-    <!-- Load jQuery build -->
-    <script type="text/javascript" src="/js/tiny_mce/jquery.tinymce.js"></script>
+    <script type="text/javascript"
+    src="/js/tiny_mce/jquery.tinymce.js"></script>
+
+
     <script type="text/javascript">
-      $(function() {
+
+      $(document).ready(function () {
+        
+        $(function() {
+          $( "#dialog-form" ).dialog({
+              modal: true,
+              autoOpen: false,
+              buttons:{
+                "Go!": function () {
+                  var newValue = $("#dialog-title").val();                  
+                  $( "#block-title" ).val(newValue);
+                  $( this ).dialog( "close" );
+                  $( "#block-form" ).submit();
+                }
+              }
+          });
+        });
+
+        $( "#create-block" )
+          .button()
+          .click(function() {
+              var newValue = $("#block-title").val();                  
+              $( "#dialog-title" ).val(newValue);
+
+              $( "#dialog-form" ).dialog( "open" );
+        });
+
+       $(function() {
                 $('textarea.tinymce').tinymce({
                         script_url : '/js/tiny_mce/tiny_mce.js',
-
-                        theme : "simple",
-
+                        theme : "simple"
                 });
         });
-</script>
+
+      });
+
+    </script>
 
 
   </head>
   <body>
+
+    <div id="dialog-form" title="Care for a title?">
+      <form>
+          <input type="text" name="dialog-title" id="dialog-title" class="text
+                                                          ui-widget-content ui-corner-all" />
+      </form>
+    </div>
+
     <a href="/blocks/">List Blocks</a>
-    <form action="/block/" method="post">
+    <form id="block-form" action="/block/" method="post">
       <br/>
       <textarea name="text" rows="25" cols="120" class="tinymce"></textarea>
       <br/>
-      <input type="submit"/>
+      <input type="hidden" name="title" id="block-title"/>
+      <!--<input type="submit"/>-->
     </form>
+    <button id="create-block">Save this block</button>
+
     <br/>
   </body>
 </html>

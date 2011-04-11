@@ -53,9 +53,9 @@
 (let [blocks (table :blocks)]
   ;; C
   (let [create-id! (id-generator blocks :id)]
-    (defn create-block! [text account_id]
+    (defn create-block! [text account_id title]
       (let [id (create-id!)]
-          (conj! blocks {:id id :text text :account_id account_id :created (new java.util.Date)})
+          (conj! blocks {:id id :title title :text text :account_id account_id :created (new java.util.Date)})
           id)))
   ;; R
   (defn get-block [id]

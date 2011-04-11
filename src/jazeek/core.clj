@@ -39,7 +39,7 @@
 
 
 (defn create-block! [text account-id]
-  (let [id (block/create! text account-id)]
+  (let [id (block/create! text account-id "test")]
     (moved-to (str "/block/" id))))
 
 (defn delete-block! [id]

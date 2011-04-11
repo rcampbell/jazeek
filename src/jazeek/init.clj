@@ -26,6 +26,7 @@
 
     (sql/create-table :blocks
                       [:id key-type "PRIMARY KEY"]
+                      [:title :text]
                       [:text :text]
                       [:account_id key-type "references account(id)" ]
                       [:created :timestamp "NOT NULL" :default "now()"])

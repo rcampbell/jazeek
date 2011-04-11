@@ -1,8 +1,8 @@
 (ns jazeek.block
   (:require [jazeek.db :as db]))
 
-(defn create! [text account-id]
-  (db/create-block! text account-id))
+(defn create! [text account-id title]
+  (db/create-block! text account-id title))
 
 (defn one [id]
   (->> (db/get-block id) :text))
